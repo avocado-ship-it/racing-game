@@ -38,6 +38,9 @@ class AbstractCar:
     
     def move_forward(self):
         self.vel = min(self.vel + self.acceleration, self.max_vel)
+
+    def move_backward(self):
+        self.vel = max(self.vel + self.acceleration, self.max_vel)
     
     def move(self):
         
