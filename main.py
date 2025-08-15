@@ -40,12 +40,12 @@ class AbstractCar:
         self.vel = min(self.vel + self.acceleration, self.max_vel)
     
     def move(self):
-        # Calculate movement based on angle
+        
         radians = math.radians(self.angle)
         vertical = math.cos(radians) * self.vel
         horizontal = math.sin(radians) * self.vel
         
-        self.y -= vertical  # Negative because pygame y-axis is flipped
+        self.y -= vertical 
         self.x -= horizontal
     
     def reduce_speed(self):
@@ -69,13 +69,13 @@ player_car = PlayerCar(4, 3.5)
 while run:
     clock.tick(FPS)
     
-    # Handle events
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
             break
     
-    # Handle key presses
+   
     keys = pygame.key.get_pressed()
     moved = False
     
@@ -87,14 +87,14 @@ while run:
         moved = True
         player_car.move_forward()
     
-    # Reduce speed if not accelerating
+    
     if not moved:
         player_car.reduce_speed()
     
-    # Move the car
+    
     player_car.move()
     
-    # Draw everything
+  
     draw(WIN, images, player_car)
 
 pygame.quit()
