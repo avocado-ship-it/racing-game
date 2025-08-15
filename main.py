@@ -18,8 +18,6 @@ pygame.display.set_caption("generic racing game")
 FPS = 60
 
 class AbstractCar:
-    
-
     def __init__(self, max_vel, rotation_vel):
         self.img = self.IMG
         self.max_vel = max_vel
@@ -27,22 +25,31 @@ class AbstractCar:
         self.rotation_vel = rotation_vel
         self.angle = 0
         self.x, self.y = self.START_POS
-        self.acceleration = 0.41
-
+        self.acceleration = .1
+    
     def rotate(self, left=False, right=False):
         if left:
             self.angle += self.rotation_vel
         elif right:
             self.angle -= self.rotation_vel
-
+    
     def draw(self, win):
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
-
-    def move_foreward(self):
+    
+    def move_forward(self):
         self.vel = min(self.vel + self.acceleration, self.max_vel)
+    
+    def move(self):
+        # Calculate movement based on angle
+        radians = math.radians(self.angle)
+        vertical = math.cos(radians) * self.vel
+        horizontal = math.sin(radians) * self.vel
         
-    def move (self):
-        pass
+        self.y -= vertical  # Negative because pygame y-axis is flipped
+        self.x -= horizontal
+    
+    def reduce_speed(self):
+        self.vel = max(self.vel - self.acceleration / 2, 0)
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
@@ -51,32 +58,43 @@ class PlayerCar(AbstractCar):
 def draw(win, images, player_car):
     for img, pos in images:
         win.blit(img, pos)
-
     player_car.draw(win)
     pygame.display.update()
 
 images = [(GRASS, (0, 0)), (TRACK, (0, 0)), (FINISH, (0, 0))]
 run = True
 clock = pygame.time.Clock()
-player_car =  PlayerCar(6, 7)
+player_car = PlayerCar(4, 3.5)
 
 while run:
     clock.tick(FPS)
     
-    
-    draw(WIN, images, player_car)
-    pygame.display.update()
-    
+    # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
             break
-
+    
+    # Handle key presses
     keys = pygame.key.get_pressed()
-
+    moved = False
+    
     if keys[pygame.K_a]:
         player_car.rotate(left=True)
     if keys[pygame.K_d]:
         player_car.rotate(right=True)
+    if keys[pygame.K_w]:
+        moved = True
+        player_car.move_forward()
+    
+    # Reduce speed if not accelerating
+    if not moved:
+        player_car.reduce_speed()
+    
+    # Move the car
+    player_car.move()
+    
+    # Draw everything
+    draw(WIN, images, player_car)
 
 pygame.quit()
