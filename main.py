@@ -42,7 +42,7 @@ class AbstractCar:
         self.vel = min(self.vel + self.acceleration, self.max_vel)
         
     def move (self):
-        
+        pass
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
