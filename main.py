@@ -10,15 +10,19 @@ TRACK = scale_image(pygame.image.load("assets/track.png"), 0.9)
 
 TRACK_BORDER = scale_image(pygame.image.load("assets/track-border.png"), 0.9)
 TRACK_BORDER_MASK =  pygame.mask.from_surface(TRACK_BORDER)
-FINISH = pygame.image.load("assets/finish.png")
 
-RED_CAR = scale_image(pygame.image.load("assets/red-car.png"), 0.55)
-GREEN_CAR = scale_image(pygame.image.load("assets/green-car.png"), 0.55)
+FINISH = pygame.image.load("assets/finish.png")
+FINISH_MASK = pygame.mask.from_surface(FINISH)
+FINISH_POSITION = (130, 250)
+
+RED_CAR = scale_image(pygame.image.load("assets/red-car.png"), 0.4)
+GREEN_CAR = scale_image(pygame.image.load("assets/green-car.png"), 0.4)
 
 WIDTH, HEIGHT = TRACK.get_width(), TRACK.get_height()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("generic racing game")
 FPS = 60
+PATH = [(159, 112), (124, 70), (69, 88), (61, 468), (298, 714), (326, 728), (368, 732), (399, 708), (404, 538), (431, 503), (466, 484), (511, 479), (545, 485), (583, 512), (605, 691), (627, 719), (646, 728), (673, 730), (710, 723), (734, 439), (718, 382), (655, 358), (438, 356), (401, 326), (425, 267), (677, 252), (726, 229), (741, 199), (743, 143), (724, 93), (314, 73), (280, 343), (264, 405), (222, 417), (194, 399), (181, 354), (275, 118), (364, 66)]
 
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
@@ -62,22 +66,72 @@ class AbstractCar:
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(car_mask, offset)
         return poi
+    
+    def reset(self):
+        self.x, self.y = self.START_POS
+        self.angle = 0
+        self.vel = 0
 
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
     START_POS = (180, 200)
 
-def draw(win, images, player_car):
+    def bounce(self):
+        self.vel = -self.vel
+        player_car.move()
+
+class ComputerCar(AbstractCar):
+    IMG = GREEN_CAR
+    START_POS = (150, 200)
+    
+    def __init__(self, max_vel, rotation_vel, path=[]):
+        super().__init__(max_vel, rotation_vel)
+        self.path = path
+        self.current_point = 0
+        self.vel = max_vel
+
+    def draw_points(self, win):
+        for point in self.path:
+            pygame.draw.circle(win, (255, 0, 0), point, 5)
+    
+    def draw(self, win):
+        super().draw(win)
+        self.draw_points(win)
+
+    def calculate_angle(self):
+        target_x, target_y = self.path [ self.current_point]
+        x_diff = target_x - self.x
+        y_diff = target_y - self.y
+
+        if y_diff == 0:
+            desired_radian_angle = math.pi/2
+        else: 
+            desired_radian_angle = math.atan(x_diff / y_diff)
+
+        if target_y > self.y :
+            desired_radian_angle += math.pi
+    
+    def move (self):
+        if self.current_point >= len(self.path):
+            return
+        
+        self.calculate_angle()
+        self.update_path_point()
+        super().move()
+
+def draw(win, images, player_car, computer_car):
     for img, pos in images:
         win.blit(img, pos)
     player_car.draw(win)
+    computer_car.draw(win)
     pygame.display.update()
 
-images = [(GRASS, (0, 0)), (TRACK, (0, 0)), (FINISH, (0, 0))]
+images = [(GRASS, (0, 0)), (TRACK, (0, 0)), (FINISH, FINISH_POSITION), (TRACK_BORDER, (0, 0))]
 run = True
 clock = pygame.time.Clock()
 player_car = PlayerCar(4, 3.5)
+computer_car = ComputerCar(2, 2, PATH)
 
 while run:
     clock.tick(FPS)
@@ -87,6 +141,8 @@ while run:
         if event.type == pygame.QUIT:
             run = False
             break
+
+       
     
    
     keys = pygame.key.get_pressed()
@@ -111,9 +167,18 @@ while run:
     player_car.move()
 
     if player_car.collide(TRACK_BORDER_MASK) != None:
-        print("dont bump me, ill moan")
-    
+        player_car.bounce()
+
+    finish_poi_collide = player_car.collide(FINISH_MASK, *FINISH_POSITION)
+    if finish_poi_collide != None:
+        if finish_poi_collide[1] == 0:
+            player_car.bounce()
+            print("wrong way")
+        else:
+            player_car.reset()
+            print("i cried, he crew, we both")
   
-    draw(WIN, images, player_car)
+    draw(WIN, images, player_car, computer_car)
+
 
 pygame.quit()
