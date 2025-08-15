@@ -7,8 +7,11 @@ pygame.init()
 
 GRASS = scale_image(pygame.image.load("assets/grass.jpg"), 2.5)
 TRACK = scale_image(pygame.image.load("assets/track.png"), 0.9)
+
 TRACK_BORDER = scale_image(pygame.image.load("assets/track-border.png"), 0.9)
+TRACK_BORDER_MASK =  pygame.mask.from_surface(TRACK_BORDER)
 FINISH = pygame.image.load("assets/finish.png")
+
 RED_CAR = scale_image(pygame.image.load("assets/red-car.png"), 0.55)
 GREEN_CAR = scale_image(pygame.image.load("assets/green-car.png"), 0.55)
 
@@ -40,7 +43,7 @@ class AbstractCar:
         self.vel = min(self.vel + self.acceleration, self.max_vel)
 
     def move_backward(self):
-        self.vel = max(self.vel + self.acceleration, self.max_vel)
+        self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
     
     def move(self):
         
@@ -53,6 +56,13 @@ class AbstractCar:
     
     def reduce_speed(self):
         self.vel = max(self.vel - self.acceleration / 2, 0)
+
+    def collide(self, mask, x=0, y=0):
+        car_mask = pygame.mask.from_surface(self.img)
+        offset = (int(self.x - x), int(self.y - y))
+        poi = mask.overlap(car_mask, offset)
+        return poi
+
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
@@ -89,6 +99,9 @@ while run:
     if keys[pygame.K_w]:
         moved = True
         player_car.move_forward()
+    if keys[pygame.K_s]:
+        moved = True
+        player_car.move_backward()
     
     
     if not moved:
@@ -96,6 +109,9 @@ while run:
     
     
     player_car.move()
+
+    if player_car.collide(TRACK_BORDER_MASK) != None:
+        print("dont bump me, ill moan")
     
   
     draw(WIN, images, player_car)
